@@ -14,7 +14,7 @@ Population = List[Genome]
 
 
 def generate_genome(tasks: List[Task]):
-    graph = main.setup_problem_clusters()
+    graph = main.setup_graph_and_clusters()
     random.seed(time.time())
     for task in tasks:
         task.received_throughput = [0] * len(task.vertices)
