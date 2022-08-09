@@ -23,13 +23,14 @@ def generate_genome(tasks: List[Task]):
         for i, vertex in enumerate(task.vertices):
             if vertex.start in start_nodes:  # initial heuristic
                 continue
-            if vertex.end == -2:
+            if vertex.end == "-2":
                 continue  # it is end node and no need to get resource
 
             start_nodes.add(vertex.start)
             random_replica = random.randint(1, task.replica + 1)
             accepted_replica = task.demand_throughput(vertex.end, task.usage, random_replica, graph)
             task.received_throughput[i] = accepted_replica
+
 
 
 

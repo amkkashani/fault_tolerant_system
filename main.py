@@ -116,19 +116,34 @@ class Task:
             else:
                 task_graph[vertex.start] = [(vertex.end, self.received_throughput[i])]
 
-        queue = []
-        for vertex in self.vertices:
-            if vertex.start == '0':
-                way = [vertex]
-                queue.append(way)
 
         flow = 0
         while True:
+            queue = []
+
+            # initial node for search
+            initial_nodes = task_graph["0"]
+            for tuple in initial_nodes:
+                way= [Vertex("0" , tuple[0])]
+                queue.append(way)
+
             found = False
             while len(queue) != 0:
+
                 found = False
-                way = queue.pop()
+                way = queue.pop(0)
                 last_vertex = way[-1]
+
+                # check loop
+                way_vertecies = set()
+                loop = False
+                for ver in way:
+                    if ver.end in way_vertecies:
+                        loop = True
+                        break
+                    way_vertecies.add(ver.start)
+                if loop:
+                    continue
 
                 # it means that we find the sink
                 if last_vertex.end == '-2':
@@ -136,12 +151,13 @@ class Task:
                     found = True
                     for v in way:
                         same_start_nodes = task_graph[v.start]
-                        for i in range(len(same_start_nodes)):
-                            tuple = same_start_nodes[i]
-                            if tuple[0] == v.end:
-                                same_start_nodes.remove(tuple)
-                                if tuple[1] - 1 > 0:
-                                    same_start_nodes.append((v.end, tuple[1] - 1))
+                        # for i in range(len(same_start_nodes)):
+                        for i, _ in enumerate(same_start_nodes):
+                            neighbor = same_start_nodes[i]
+                            if neighbor[0] == v.end:
+                                same_start_nodes.remove(neighbor)
+                                if neighbor[1] - 1 > 0:
+                                    same_start_nodes.insert(0, (v.end, neighbor[1] - 1))
 
                                 task_graph[v.start] = same_start_nodes
 
@@ -149,19 +165,26 @@ class Task:
                                 if v.end in task_graph.keys():
                                     isExist = False
                                     current_list_of_tuples = task_graph[v.end]
-
-                                    for tuple in current_list_of_tuples:
-                                        if tuple[0] == v.start:
+                                    # if len(current_list_of_tuples) == 2:
+                                    #     current_list_of_tuples = [current_list_of_tuples]
+                                    for t in current_list_of_tuples:
+                                        if t[0] == v.start:
                                             isExist = True
-                                            current_list_of_tuples.remove(tuple)
-                                            current_list_of_tuples.append((v.start, tuple[1] + 1))
+                                            current_list_of_tuples.remove(t)
+                                            current_list_of_tuples.append((v.start, t[1] + 1))
                                             task_graph[v.end] = current_list_of_tuples
 
+                                    if len(current_list_of_tuples) == 0:
+                                        isExist = True
+                                        current_list_of_tuples = [(v.start, 1)]
+                                        task_graph[v.end] = current_list_of_tuples
+
                                     if not isExist:
-                                        current_list_of_tuples.append((v.end, 1))
+                                        current_list_of_tuples.append((v.start, 1))
                                         task_graph[v.end] = current_list_of_tuples
                                 else:
-                                    task_graph[v.end] = (v.start, 1)
+                                    task_graph[v.end] = [(v.start, 1)]
+                    break
 
                 else:
                     if last_vertex.end not in task_graph.keys():
@@ -172,10 +195,12 @@ class Task:
                     if len(next_steps) == 0:
                         continue
 
-                    for tuple in next_steps:
+                    for neighbor in next_steps:
                         # val is tuple that first element is the end node id and second element is
                         # throughput
-                        way.insert(0, Vertex(last_vertex.end, tuple[0]))
+                        new_way = way.copy()
+                        new_way.append(Vertex(last_vertex.end, neighbor[0]))
+                        queue.append(new_way)
 
                 if found:
                     break
@@ -194,7 +219,7 @@ def main():
 
     # test
     task = Task(
-        [Vertex(0, 'a'), Vertex(0, 'd'), Vertex('a', 'b'), Vertex('d', 'c'), Vertex('b', '-2'), Vertex('d', 'b'),
+        [Vertex("0", 'a'), Vertex("0", 'd'), Vertex('a', 'b'), Vertex('d', 'c'), Vertex('b', '-2'), Vertex('d', 'b'),
          Vertex('c', '-2')], 0, 0)
 
     task.received_throughput = [8, 3, 9, 4, 2, 7, 5]
