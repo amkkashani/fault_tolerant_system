@@ -1,5 +1,6 @@
 import math
 import random
+from functools import partial
 
 import genetic
 from typing import List
@@ -93,6 +94,8 @@ class Task:
         self.replica = replica
         self.received_throughput = [0] * len(vertices)
 
+    def make_a_copy_with_no_defualt_throw_put(self):
+        return Task(self.vertices,self.replica,self.usage)
     # def set_received_throughput(self, index, amount):
     #     self.received_throughput[index] = amount
     #
@@ -115,7 +118,6 @@ class Task:
                 task_graph[vertex.start].append((vertex.end, self.received_throughput[i]))
             else:
                 task_graph[vertex.start] = [(vertex.end, self.received_throughput[i])]
-
 
         flow = 0
         while True:
@@ -211,29 +213,33 @@ class Task:
 
 
 def main():
+    population, genrations = genetic.run_evolution(
+        population_func=partial(genetic.generate_population, size=10),
+        fitness_func=partial(genetic.fitness)
+    )
+
     # print("hello")
     # graph = Graph()
     setup_graph_and_clusters()
 
     setup_graph_and_clusters()
 
-    # test
-    task = Task(
-        [Vertex("0", 'a'), Vertex("0", 'd'), Vertex('a', 'b'), Vertex('d', 'c'), Vertex('b', '-2'), Vertex('d', 'b'),
-         Vertex('c', '-2')], 0, 0)
-
-    task.received_throughput = [8, 3, 9, 4, 2, 7, 5]
-
-    print(task.ford_fulkerson())
+    # # test
+    # task = Task(
+    #     [Vertex("0", 'a'), Vertex("0", 'c'), Vertex('a', 'c'), Vertex('c', 'a'), Vertex('a', 'b'), Vertex('b', 'c'),
+    #      Vertex('c', 'd') ,Vertex('d' , 'b'),Vertex('b','-2') , Vertex('d' , "-2")], 0, 0)
+    #
+    # task.received_throughput = [16, 13, 10, 4, 12, 9,14 ,7 ,20 , 4 ]
+    # print(task.ford_fulkerson())
 
 
 def setup_graph_and_clusters():
-    number_of_clusters = 15
+    number_of_clusters = 18
     clusters = []
     random.seed(1500)
     nodes = []
     for i in range(1000):
-        nodes.append(Node(random.randint(0, 10)))
+        nodes.append(Node(random.randint(1, 8)))
 
     # iteration starts from 1 because source cluster is 0 and the other starts from 1
     for i in range(1, number_of_clusters + 1):
