@@ -8,7 +8,8 @@ from main import Task
 from main import Graph
 from main import Node
 from main import Cluster
-from main import *
+
+import main
 
 Genome = List[Task]
 Population = List[Genome]
@@ -17,6 +18,8 @@ PopulateFunc = callable([[], Population])
 SelectionFunc = callable([[Population, FitnessFunc], Tuple[Genome, Genome]])
 CrossoverFunc = callable([[Genome, Genome], Tuple[Genome, Genome]])
 MutationFunc = callable([[Genome], Genome])
+
+size_of_population = 50
 
 
 def generate_genome(tasks: List[Task]):
@@ -74,12 +77,12 @@ def single_point_cross_over(a: Genome, b: Genome) -> Tuple[Genome, Genome]:
     return a_copy, b_copy
 
 
-def mutation(genome: Genome, rang: int = 1):
-    new_Graph = setup_graph_and_clusters()
+def mutation(genome: Genome, rnd_range: int = 1):
+    new_Graph = main.setup_graph_and_clusters()
     genome_copy = copy_genome_empty_predections(genome)
     for i, task in enumerate(genome):
-        for j, vertex in enumerate(task):
-            rnd = random.randint(-range, range + 1)
+        for j, vertex in enumerate(task.vertices):
+            rnd = random.randint(-1 * rnd_range, rnd_range + 1)
             genome_copy[i].demand_throughput(vertex.end, genome[i].received_throughput[j] + rnd, genome[i].replica,
                                              new_Graph)
 
@@ -94,7 +97,6 @@ def copy_genome_empty_predections(genome: Genome) -> Genome:
 
 
 def run_evolution(
-        population_func: PopulateFunc,
         fitness_func: FitnessFunc,
         # fitness_limit : int ,
         selection_func: SelectionFunc = selection_pair,
@@ -102,7 +104,8 @@ def run_evolution(
         mutation_func: MutationFunc = mutation,
         generation_limit: int = 100,
 ) -> tuple[Population, int]:
-    population = population_func()
+    population = generate_population(size_of_population,
+                                     main.setup_tasks(main.number_of_clusters, main.number_of_tasks))
 
     for i in range(generation_limit):
         population = sorted(population, key=lambda genome: fitness_func(genome), reverse=True)
@@ -119,10 +122,10 @@ def run_evolution(
             off_spring_b = mutation(off_spring_b)
             next_generation += [off_spring_a, off_spring_b]
 
-        population = next_generation
+        population = next_generation[0:size_of_population]
+        print(i)
+        print(fitness_func(population[0]))
 
     population = sorted(population, key=lambda genome: fitness_func(genome), reverse=True)
 
     return population, i
-
-

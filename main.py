@@ -6,6 +6,10 @@ import genetic
 from typing import List
 
 
+number_of_clusters = 18
+number_of_tasks = 20
+
+
 # vertex in cluster graph
 class Vertex:
     def __init__(self, start, end):
@@ -95,12 +99,15 @@ class Task:
         self.received_throughput = [0] * len(vertices)
 
     def make_a_copy_with_no_defualt_throw_put(self):
-        return Task(self.vertices,self.replica,self.usage)
+        return Task(self.vertices, self.replica, self.usage)
+
     # def set_received_throughput(self, index, amount):
     #     self.received_throughput[index] = amount
     #
 
     def demand_throughput(self, cluster_name, usage, replica, target_graph: Graph) -> int:
+        if cluster_name == "-2":  # infinity capacity for end node available
+            return replica
         gained_nodes = target_graph.reserved_capacity(cluster_name, usage, replica)
         return gained_nodes
 
@@ -126,7 +133,7 @@ class Task:
             # initial node for search
             initial_nodes = task_graph["0"]
             for tuple in initial_nodes:
-                way= [Vertex("0" , tuple[0])]
+                way = [Vertex("0", tuple[0])]
                 queue.append(way)
 
             found = False
@@ -214,15 +221,8 @@ class Task:
 
 def main():
     population, genrations = genetic.run_evolution(
-        population_func=partial(genetic.generate_population, size=10),
-        fitness_func=partial(genetic.fitness)
+        fitness_func=partial(genetic.fitness),
     )
-
-    # print("hello")
-    # graph = Graph()
-    setup_graph_and_clusters()
-
-    setup_graph_and_clusters()
 
     # # test
     # task = Task(
@@ -234,7 +234,7 @@ def main():
 
 
 def setup_graph_and_clusters():
-    number_of_clusters = 18
+
     clusters = []
     random.seed(1500)
     nodes = []
@@ -244,10 +244,41 @@ def setup_graph_and_clusters():
     # iteration starts from 1 because source cluster is 0 and the other starts from 1
     for i in range(1, number_of_clusters + 1):
         cluster_nodes = random.randint(5, 15)
-        clusters.append(Cluster(i, nodes[0: cluster_nodes]))
+        clusters.append(Cluster(i.__str__(), nodes[0: cluster_nodes]))
         nodes = nodes[cluster_nodes:]
 
     return Graph(clusters)
+
+
+def setup_tasks(number_of_clusters: int, number_of_tasks : int):
+    random.seed(100)
+    tasks = []
+
+    for i in range(number_of_tasks):
+        tasks.append(generate_Task(number_of_clusters))
+
+    return tasks
+
+
+def generate_Task(number_of_clusters, k=6):
+    nodes = []
+    for i in range(number_of_clusters):
+        nodes.append((i + 1).__str__())
+    task_nodes = random.sample(nodes, k=k)
+
+    vertcies = []
+
+    vertcies.append(Vertex("0", task_nodes[0]))
+
+    vertcies.append(Vertex(task_nodes[0], task_nodes[1]))
+    vertcies.append(Vertex(task_nodes[1], task_nodes[2]))
+    vertcies.append(Vertex(task_nodes[1], task_nodes[3]))
+    vertcies.append(Vertex(task_nodes[2], task_nodes[3]))
+    vertcies.append(Vertex(task_nodes[2], task_nodes[4]))
+    vertcies.append(Vertex(task_nodes[4], task_nodes[5]))
+    vertcies.append(Vertex(task_nodes[5], "-2"))
+
+    return Task(vertcies, random.randint(2, 4), random.randint(1, 4))
 
 
 # Press the green button in the gutter to run the script.
